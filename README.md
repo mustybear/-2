@@ -19,7 +19,6 @@
 | 直流馬達           | 2       | 車輛驅動         |
 | HC-SR04 超音波感測器 | 1       | 障礙物偵測       |
 | 紅外線循跡感測器   | 2       | 軌跡追蹤         |
-| LED 指示燈         | 2       | 顯示狀態         |
 
 # 四、系統架構
 車輛運作流程如下：
@@ -29,51 +28,215 @@
 2.避障機制：當前方障礙物低於設定距離時，車輛停下或轉向。
 
 3.PWM 速度控制：調節馬達轉速，以適應不同環境需求。
-
-4.LED 指示：提供車輛運行狀態回饋。
 # 五、程式碼示範
-1.const int ENA = 3; // 左前輪 PWM
+// 馬達與感測器腳位設定
+const int ENA = 3, IN1 = 7, IN2 = 6;
 
-2.const int IN1 = 7; // 左前方向 A
+const int ENB = 5, IN3 = 2, IN4 = 4;
 
-3.const int IN2 = 6; // 左前方向 B
-
-4.const int ENB = 5; // 右後輪 PWM
-
-5.const int IN3 = 2; // 右後方向 A
-
-6.const int IN4 = 4; // 右後方向 B
+const int IR_L = 8, IR_R = 9;
 
 
+void setup() {
 
-7.void setup() {
+pinMode(ENA, OUTPUT);
 
-8.    pinMode(ENA, OUTPUT);
-   
-9.    pinMode(IN1, OUTPUT);
+pinMode(IN1, OUTPUT);
 
-10.    pinMode(IN2, OUTPUT);
+pinMode(IN2, OUTPUT);
 
-11.    pinMode(ENB, OUTPUT);
+pinMode(ENB, OUTPUT);
 
-12.    pinMode(IN3, OUTPUT);
-   
-13.    pinMode(IN4, OUTPUT);
-   
-14.    Serial.begin(9600);
-   
-15.}
+pinMode(IN3, OUTPUT);
 
-16.void loop() {
+pinMode(IN4, OUTPUT);
 
-17.    // 自走車邏輯
-   
-18.}
+pinMode(IR_L, INPUT);
+
+pinMode(IR_R, INPUT);
+
+Serial.begin(9600);
+
+}
+
+
+
+void loop() {
+
+int leftIR = digitalRead(IR_L);
+
+int rightIR = digitalRead(IR_R);
+
+
+
+// 前進
+if (leftIR == LOW && rightIR == LOW) {
+
+moveForward(80);
+
+}
+
+// 偵測右邊是黑線，需左轉修正
+
+else if (leftIR == LOW && rightIR == HIGH) {
+
+adjustLeft();
+
+}
+
+// 偵測左邊是黑線，需右轉修正
+
+else if (leftIR == HIGH && rightIR == LOW) {
+
+adjustRight();
+
+}
+
+// 停止
+
+else {
+
+stopMotors();
+
+}
+
+}
+
+
+
+// 馬達控制函式
+
+void moveForward(int speed) {
+
+digitalWrite(IN1, HIGH);
+
+digitalWrite(IN2, LOW);
+
+digitalWrite(IN3, HIGH);
+
+digitalWrite(IN4, LOW);
+
+analogWrite(ENA, speed);
+
+analogWrite(ENB, speed);
+
+}
+
+
+
+void stopMotors() {
+
+analogWrite(ENA, 0);
+
+analogWrite(ENB, 0);
+
+}
+
+
+void adjustLeft() {
+
+stopMotors();
+
+delay(250);
+
+reverse();
+
+delay(250);
+
+turnLeft();
+
+delay(750);
+
+}
+
+
+void adjustRight() {
+
+stopMotors();
+
+delay(250);
+
+reverse();
+
+delay(250);
+
+turnRight();
+
+delay(750);
+
+}
+
+
+
+void reverse() {
+
+digitalWrite(IN1, LOW);
+
+digitalWrite(IN2, HIGH);
+
+digitalWrite(IN3, LOW);
+
+digitalWrite(IN4, HIGH);
+
+analogWrite(ENA, 80);
+
+analogWrite(ENB, 80);
+
+}
+
+
+
+void turnLeft() {
+
+digitalWrite(IN1, HIGH);
+
+digitalWrite(IN2, LOW); // 左輪正轉
+
+digitalWrite(IN3, LOW);
+
+digitalWrite(IN4, HIGH); // 右輪反轉
+
+analogWrite(ENA, 150);
+
+analogWrite(ENB, 150);
+
+}
+
+
+
+void turnRight() {
+
+digitalWrite(IN1, LOW);
+
+digitalWrite(IN2, HIGH); // 左輪反轉
+
+digitalWrite(IN3, HIGH);
+
+digitalWrite(IN4, LOW); // 右輪正轉
+
+analogWrite(ENA, 150);
+
+analogWrite(ENB, 150);
+
+}
+
 # 六、預期成果
 1.成功開發 可循跡與避障 的自走車。
 
 2.提升 自動導航穩定性，確保運作準確。
 
 3.提供開放原始碼，讓使用者能夠改進與擴展功能。
-# 七、專案授權
-本專案採用 MIT License，開放使用與修改，鼓勵社群合作與創新。
+# 七、遇到的困難
+❶ 馬達時轉時不轉，控制程式未變
+
+❷ 第二次偵測時，馬達有聲音但無法轉動
+
+❸ 有時連起步都無法轉動，但更換硬體後仍無解
+
+❹ 馬達僅能轉幾秒鐘後就沒力，或完全停止
+
+❺ 所有硬體（電池、驅動、馬達）測試正常，但問題仍出現
+# 七、外觀設計
+❶ 黑色防撞條
+❷ 粉色備胎
+
